@@ -43,7 +43,7 @@ import optparse
 import sys
 import os
 import zipfile
-import cStringIO
+import io
 import binascii
 import textwrap
 import re
@@ -53,7 +53,7 @@ import json
 if sys.version_info[0] >= 3:
     from io import StringIO
 else:
-    from cStringIO import StringIO
+    from io import StringIO
 
 try:
     import yara
@@ -69,7 +69,7 @@ Manual:
 
 '''
     for line in manual.split('\n'):
-        print(textwrap.fill(line))
+        print((textwrap.fill(line)))
 
 #Convert 2 Bytes If Python 3
 def C2BIP3(string):
@@ -226,7 +226,7 @@ def File2Strings(filename):
     except:
         return None
     try:
-        return map(lambda line:line.rstrip('\n'), f.readlines())
+        return [line.rstrip('\n') for line in f.readlines()]
     except:
         return None
     finally:
@@ -248,7 +248,7 @@ def AddPlugin(cClass):
     plugins.append(cClass)
 
 def ExpandFilenameArguments(filenames):
-    return list(collections.OrderedDict.fromkeys(sum(map(glob.glob, sum(map(ProcessAt, filenames), [])), [])))
+    return list(collections.OrderedDict.fromkeys(sum(list(map(glob.glob, sum(list(map(ProcessAt, filenames)), []))), [])))
 
 class cPluginParent():
     macroOnly = False
@@ -257,7 +257,7 @@ def LoadPlugins(plugins, verbose):
     if plugins == '':
         return
     scriptPath = os.path.dirname(sys.argv[0])
-    for plugin in sum(map(ProcessAt, plugins.split(',')), []):
+    for plugin in sum(list(map(ProcessAt, plugins.split(','))), []):
         try:
             if not plugin.lower().endswith('.py'):
                 plugin += '.py'
@@ -266,9 +266,9 @@ def LoadPlugins(plugins, verbose):
                     scriptPlugin = os.path.join(scriptPath, plugin)
                     if os.path.exists(scriptPlugin):
                         plugin = scriptPlugin
-            exec open(plugin, 'r') in globals(), globals()
+            exec(open(plugin, 'r'), globals(), globals())
         except Exception as e:
-            print('Error loading plugin: %s' % plugin)
+            print(('Error loading plugin: %s' % plugin))
             if verbose:
                 raise e
 
@@ -284,7 +284,7 @@ def LoadDecoders(decoders, verbose):
     if decoders == '':
         return
     scriptPath = os.path.dirname(sys.argv[0])
-    for decoder in sum(map(ProcessAt, decoders.split(',')), []):
+    for decoder in sum(list(map(ProcessAt, decoders.split(','))), []):
         try:
             if not decoder.lower().endswith('.py'):
                 decoder += '.py'
@@ -293,9 +293,9 @@ def LoadDecoders(decoders, verbose):
                     scriptDecoder = os.path.join(scriptPath, decoder)
                     if os.path.exists(scriptDecoder):
                         decoder = scriptDecoder
-            exec open(decoder, 'r') in globals(), globals()
+            exec(open(decoder, 'r'), globals(), globals())
         except Exception as e:
-            print('Error loading decoder: %s' % decoder)
+            print(('Error loading decoder: %s' % decoder))
             if verbose:
                 raise e
 
@@ -353,7 +353,7 @@ def BuildTree(rtfdata, level, index, sequence, options):
         else:
             index += 1
     if options.select == '':
-        print('Parser warning: Missing terminating character } level = %d' % level)
+        print(('Parser warning: Missing terminating character } level = %d' % level))
     oIteminfo.endPosition = index
     oIteminfo.countChildren = children
     return index
@@ -370,10 +370,10 @@ def Trimdde(data):
 def ExtractHex(data):
     data = Trimdde(data)
     if data.startswith('\r\n\\dde'):
-        print(repr(data[0:40]))
+        print((repr(data[0:40])))
     backslash = False
     backslashtext = ''
-    hexstring = [cStringIO.StringIO()]
+    hexstring = [io.StringIO()]
     countUnexpectedCharacters = 0
     binstatus = 0
     binnumber = ''
@@ -402,7 +402,7 @@ def ExtractHex(data):
                     if binint == 0:
                         binstatus = 0
                         hexstring.append(['bin', bintext])
-                        hexstring.append(cStringIO.StringIO())
+                        hexstring.append(io.StringIO())
                         binnumber = ''
                         bintext = ''
         elif backslash:
@@ -684,7 +684,7 @@ def RTFSub(oStringIO, prefix, rules, options):
 
     if options.filter != '':
         if not options.filter in ['O', 'h']:
-            print('Unknown filter: %s' % options.filter)
+            print(('Unknown filter: %s' % options.filter))
             return
 
     returnCode = 0
@@ -694,7 +694,7 @@ def RTFSub(oStringIO, prefix, rules, options):
     counter = 1
     rtfdata = oStringIO.read()
     if not rtfdata.startswith('{'):
-        print('This file does not start with an opening brace: {\nCheck if it is an RTF file.\nMAGIC: %s' % GenerateMAGIC(rtfdata[0:4]))
+        print(('This file does not start with an opening brace: {\nCheck if it is an RTF file.\nMAGIC: %s' % GenerateMAGIC(rtfdata[0:4])))
         return -1
     sequence = []
     BuildTree(rtfdata, 0, 0, sequence, options)
@@ -734,7 +734,7 @@ def RTFSub(oStringIO, prefix, rules, options):
                 except:
                     data = ''
             object.append({'id': counter, 'name': str(counter), 'content': binascii.b2a_base64(data).strip('\n')})
-        print(json.dumps({'version': 2, 'id': 'didierstevens.com', 'type': 'content', 'fields': ['id', 'name', 'content'], 'items': object}))
+        print((json.dumps({'version': 2, 'id': 'didierstevens.com', 'type': 'content', 'fields': ['id', 'name', 'content'], 'items': object})))
         return
 
     if options.select == '':
@@ -748,7 +748,7 @@ def RTFSub(oStringIO, prefix, rules, options):
                 if options.yara == None:
                     print(line)
                     if dAnalysis[counter].oleInfo != []:
-                        print('      Name: %s Size: %d md5: %s magic: %s' % (repr(dAnalysis[counter].oleInfo[0]), dAnalysis[counter].oleInfo[2], dAnalysis[counter].oleInfo[3], dAnalysis[counter].oleInfo[4]))
+                        print(('      Name: %s Size: %d md5: %s magic: %s' % (repr(dAnalysis[counter].oleInfo[0]), dAnalysis[counter].oleInfo[2], dAnalysis[counter].oleInfo[3], dAnalysis[counter].oleInfo[4])))
                     if dAnalysis[counter].level == 0:
                         message = []
                         countWhitespace = len([c for c in dAnalysis[counter].content if c in string.whitespace])
@@ -768,7 +768,7 @@ def RTFSub(oStringIO, prefix, rules, options):
                                 message.append('Left curly braces = %d' % dAnalysis[counter].content.count('{'))
                             if dAnalysis[counter].content.count('}') > 0:
                                 message.append('Right curly braces = %d' % dAnalysis[counter].content.count('}'))
-                        print('      ' + '  '.join(message))
+                        print(('      ' + '  '.join(message)))
                     linePrinted = True
                 elif dAnalysis[counter].content != None:
                     stream = HexDecodeIfRequested(dAnalysis[counter], options)
@@ -778,7 +778,7 @@ def RTFSub(oStringIO, prefix, rules, options):
                             oDecoder = cDecoder(stream, options.decoderoptions)
                             oDecoders.append(oDecoder)
                         except Exception as e:
-                            print('Error instantiating decoder: %s' % cDecoder.name)
+                            print(('Error instantiating decoder: %s' % cDecoder.name))
                             if options.verbose:
                                 raise e
                             return returnCode
@@ -788,12 +788,12 @@ def RTFSub(oStringIO, prefix, rules, options):
                                 if not linePrinted:
                                     print(line)
                                     linePrinted = True
-                                print('               YARA rule%s: %s' % (IFF(oDecoder.Name() == '', '', ' (stream decoder: %s)' % oDecoder.Name()), result.rule))
+                                print(('               YARA rule%s: %s' % (IFF(oDecoder.Name() == '', '', ' (stream decoder: %s)' % oDecoder.Name()), result.rule)))
                                 if options.yarastrings:
                                     for stringdata in result.strings:
-                                        print('               %06x %s:' % (stringdata[0], stringdata[1]))
-                                        print('                %s' % binascii.hexlify(C2BIP3(stringdata[2])))
-                                        print('                %s' % repr(stringdata[2]))
+                                        print(('               %06x %s:' % (stringdata[0], stringdata[1])))
+                                        print(('                %s' % binascii.hexlify(C2BIP3(stringdata[2]))))
+                                        print(('                %s' % repr(stringdata[2])))
     else:
         if len(decoders) > 1:
             print('Error: provide only one decoder when using option select')
@@ -814,11 +814,11 @@ def RTFSub(oStringIO, prefix, rules, options):
         else:
             ExtractFunction = lambda x:x
 
-        for key in dAnalysis.keys():
+        for key in list(dAnalysis.keys()):
             if options.select != 'a' and options.select != str(key):
                 del dAnalysis[key]
         if len(dAnalysis) == 0:
-            print('Warning: no item was selected with expression %s' % options.select)
+            print(('Warning: no item was selected with expression %s' % options.select))
             return
         for key in sorted(dAnalysis.keys()):
             StdoutWriteChunked(DumpFunction(ExtractFunction(DecodeFunction(decoders, options, CutData(HexDecodeIfRequested(dAnalysis[key], options), options.cut)))))
@@ -874,15 +874,15 @@ def RTFDump(filename, options):
 
     if filename == '':
         IfWIN32SetBinary(sys.stdin)
-        oStringIO = cStringIO.StringIO(sys.stdin.read())
+        oStringIO = io.StringIO(sys.stdin.read())
     elif filename.lower().endswith('.zip'):
         oZipfile = zipfile.ZipFile(filename, 'r')
         oZipContent = oZipfile.open(oZipfile.infolist()[0], 'r', C2BIP3(MALWARE_PASSWORD))
-        oStringIO = cStringIO.StringIO(oZipContent.read())
+        oStringIO = io.StringIO(oZipContent.read())
         oZipContent.close()
         oZipfile.close()
     else:
-        oStringIO = cStringIO.StringIO(open(filename, 'rb').read())
+        oStringIO = io.StringIO(open(filename, 'rb').read())
 
     returnCode = RTFSub(oStringIO, '', rules, options)
 
@@ -920,7 +920,7 @@ def Main():
         return 0
 
     if ParseCutArgument(options.cut)[0] == None:
-        print('Error: the expression of the cut option (-c) is invalid: %s' % options.cut)
+        print(('Error: the expression of the cut option (-c) is invalid: %s' % options.cut))
         return 0
 
     if len(args) > 1:
